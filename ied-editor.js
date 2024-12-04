@@ -302,6 +302,10 @@ export class IedEditor extends LitElement {
       gap: 1rem;
     }
 
+    main > details {
+      width: max-content;
+    }
+
     md-filled-text-field {
       width: max-content;
     }
