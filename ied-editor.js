@@ -7,6 +7,21 @@ import '@material/web/textfield/filled-text-field.js';
 import '@material/web/iconbutton/icon-button.js';
 import '@material/web/icon/icon.js';
 
+function renderDataModelSpan(key) {
+  if (key.nodeName === 'DA' || key.nodeName === 'BDA') {
+    return html`<span class="type"
+      >${key.nodeName}
+      <span class="subtype"
+        >(${key.getAttribute('type') || key.getAttribute('bType')})</span
+      ></span
+    >`;
+  }
+  return html`<span class="type"
+    >${key.nodeName}
+    <span class="subtype">(${key.getAttribute('type')})</span></span
+  >`;
+}
+
 function findInstanceToRemove(element) {
   const parent = element.parentElement;
   const siblings = Array.from(parent.children).filter(
@@ -168,9 +183,7 @@ export class IedEditor extends LitElement {
                   ><md-icon>add</md-icon></md-icon-button
                 >`
               : nothing}
-            <span class="type"
-              >${key.getAttribute('type') || key.getAttribute('bType')}</span
-            >
+            ${renderDataModelSpan(key)}
           </summary>
           ${this.renderDataModel(
             value,
@@ -226,7 +239,10 @@ export class IedEditor extends LitElement {
               ${Array.from(server.querySelectorAll(':scope > LDevice')).map(
                 ld => html`
                   <details open>
-                    <summary>${ld.getAttribute('inst')}</summary>
+                    <summary>
+                      ${ld.getAttribute('inst')}
+                      <span class="type">${ld.nodeName}</span>
+                    </summary>
                     ${Array.from(
                       ld.querySelectorAll(':scope > LN0, :scope > LN'),
                     ).map(
@@ -236,9 +252,12 @@ export class IedEditor extends LitElement {
                             ${ln.getAttribute('prefix')}${ln.getAttribute(
                               'lnClass',
                             )}${ln.getAttribute('inst')}
-                            <span class="type"
-                              >${ln.getAttribute('lnType')}</span
-                            >
+                            <span class="type">
+                              ${ln.nodeName}
+                              <span class="subtype"
+                                >(${ln.getAttribute('lnType')})</span
+                              >
+                            </span>
                           </summary>
                           ${this.renderLN(ln)}
                         </details>
@@ -335,11 +354,15 @@ export class IedEditor extends LitElement {
     span.type {
       opacity: 0;
       transition: opacity 0.05s cubic-bezier(0.9, 0, 1, 0.45);
-      padding-left: 1rem;
+      padding-left: 3rem;
       font-weight: normal;
       font-size: 16px;
       vertical-align: middle;
       float: right;
+    }
+
+    span.subtype {
+      font-size: 13px;
     }
 
     summary:hover {
