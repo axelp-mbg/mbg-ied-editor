@@ -91,6 +91,7 @@ export class IedEditor extends LitElement {
     doc: {},
     ied: {},
     editCount: { type: Number },
+    searchTerm: { type: String },
   };
 
   instantiatePath(path, ln) {
@@ -208,11 +209,59 @@ export class IedEditor extends LitElement {
     return this.renderDataModel(dataModel, values, ln);
   }
 
+  searchLN(instance, searchTerm) {
+    if (!searchTerm) return true;
+
+    // get the LN name and instance
+    const lnClass =
+      instance.getAttribute('prefix') +
+      instance.getAttribute('lnClass') +
+      instance.getAttribute('inst');
+
+    // get the LN type
+    const lnType = instance.getAttribute('lnType');
+
+    // check if it is given a description
+    const lnTemplate = this.doc?.querySelector(
+      `:root > DataTypeTemplates > LNodeType[id="${instance.getAttribute('lnType')}"]`,
+    );
+    const lnDesc =
+      (instance.getAttribute('desc') || lnTemplate?.getAttribute('desc')) ?? '';
+    if (lnDesc) {
+      if (lnDesc.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return true;
+      }
+    }
+
+    // if instance is an LDevice, check if any of its child LN elements match the search term
+    if (instance.nodeName === 'LDevice') {
+      const lnElements = Array.from(
+        instance.querySelectorAll(':scope > LN0, :scope > LN'),
+      );
+      return lnElements.some(ln => this.searchLN(ln, searchTerm));
+    }
+
+    return (
+      lnClass.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lnType.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+
+  resetSearch() {
+    this.searchTerm = '';
+
+    // empty value in the search field
+    const searchInput = this.shadowRoot.querySelector('.search-input');
+    searchInput.value = '';
+
+    this.requestUpdate();
+  }
+
   render() {
     return html`
       <main>
         <md-filled-text-field
-          label="name"
+          label="IED Name"
           value="${this.ied?.getAttribute('name')}"
           @change=${e =>
             this.dispatchEvent(
@@ -228,6 +277,23 @@ export class IedEditor extends LitElement {
         >
         </md-filled-text-field>
 
+        <div class="search-container">
+          <md-filled-text-field
+            class="search-input"
+            label="Search"
+            @input=${e => {
+              this.searchTerm = e.target.value;
+            }}
+          >
+          </md-filled-text-field>
+          <md-icon-button
+            title="Clear search"
+            @click=${() => this.resetSearch()}
+          >
+            <md-icon>clear</md-icon>
+          </md-icon-button>
+        </div>
+
         ${Array.from(
           this.ied.querySelectorAll(':scope > AccessPoint > Server'),
         ).map(
@@ -236,36 +302,40 @@ export class IedEditor extends LitElement {
               <summary>
                 ${server.parentElement.getAttribute('name')} Server
               </summary>
-              ${Array.from(server.querySelectorAll(':scope > LDevice')).map(
-                ld => html`
-                  <details open>
-                    <summary>
-                      ${ld.getAttribute('inst')}
-                      <span class="type">${ld.nodeName}</span>
-                    </summary>
-                    ${Array.from(
-                      ld.querySelectorAll(':scope > LN0, :scope > LN'),
-                    ).map(
-                      ln => html`
-                        <details class="odd">
-                          <summary>
-                            ${ln.getAttribute('prefix')}${ln.getAttribute(
-                              'lnClass',
-                            )}${ln.getAttribute('inst')}
-                            <span class="type">
-                              ${ln.nodeName}
-                              <span class="subtype"
-                                >(${ln.getAttribute('lnType')})</span
-                              >
-                            </span>
-                          </summary>
-                          ${this.renderLN(ln)}
-                        </details>
-                      `,
-                    )}
-                  </details>
-                `,
-              )}
+              ${Array.from(server.querySelectorAll(':scope > LDevice'))
+                .filter(ld => this.searchLN(ld, this.searchTerm))
+                .map(
+                  ld => html`
+                    <details open>
+                      <summary>
+                        ${ld.getAttribute('inst')}
+                        <span class="type">${ld.nodeName}</span>
+                      </summary>
+                      ${Array.from(
+                        ld.querySelectorAll(':scope > LN0, :scope > LN'),
+                      )
+                        .filter(ln => this.searchLN(ln, this.searchTerm))
+                        .map(
+                          ln => html`
+                            <details class="odd">
+                              <summary>
+                                ${ln.getAttribute('prefix')}${ln.getAttribute(
+                                  'lnClass',
+                                )}${ln.getAttribute('inst')}
+                                <span class="type">
+                                  ${ln.nodeName}
+                                  <span class="subtype"
+                                    >(${ln.getAttribute('lnType')})</span
+                                  >
+                                </span>
+                              </summary>
+                              ${this.renderLN(ln)}
+                            </details>
+                          `,
+                        )}
+                    </details>
+                  `,
+                )}
             </details>`,
         )}
       </main>
@@ -327,6 +397,15 @@ export class IedEditor extends LitElement {
 
     md-filled-text-field {
       width: max-content;
+    }
+
+    .search-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .search-container md-icon-button {
+      margin-left: 8px;
     }
 
     details {
