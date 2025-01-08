@@ -6,6 +6,24 @@ import { updateIED } from '@openenergytools/scl-lib';
 import '@material/web/textfield/filled-text-field.js';
 import '@material/web/iconbutton/icon-button.js';
 import '@material/web/icon/icon.js';
+import '@material/web/radio/radio.js';
+
+function searchLDevice(instance, searchTerm) {
+  if (!searchTerm || instance.nodeName !== 'LDevice') return true;
+
+  // get the LDevice instance
+  const lDevice = instance.getAttribute('inst');
+
+  // check if it is given a description
+  const desc = instance.getAttribute('desc') ?? '';
+  if (desc) {
+    if (desc.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return true;
+    }
+  }
+
+  return lDevice.toLowerCase().includes(searchTerm.toLowerCase());
+}
 
 function renderDataModelSpan(key) {
   if (key.nodeName === 'DA' || key.nodeName === 'BDA') {
@@ -92,6 +110,7 @@ export class IedEditor extends LitElement {
     ied: {},
     editCount: { type: Number },
     searchTerm: { type: String },
+    searchMode: { type: Number },
   };
 
   instantiatePath(path, ln) {
@@ -209,6 +228,14 @@ export class IedEditor extends LitElement {
     return this.renderDataModel(dataModel, values, ln);
   }
 
+  handleRadioChange(e) {
+    const selectedRadio = e.target;
+    if (selectedRadio) {
+      const extensionType = selectedRadio.getAttribute('value');
+      this.searchMode = parseInt(extensionType, 10);
+    }
+  }
+
   searchLN(instance, searchTerm) {
     if (!searchTerm) return true;
 
@@ -245,6 +272,23 @@ export class IedEditor extends LitElement {
       lnClass.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lnType.toLowerCase().includes(searchTerm.toLowerCase())
     );
+  }
+
+  searchElt(instance, searchTerm) {
+    if (!searchTerm) return true;
+
+    switch (this.searchMode) {
+      case 1:
+        return searchLDevice(instance, searchTerm);
+      case 2:
+        return this.searchLN(instance, searchTerm);
+      case 0:
+      default:
+        return (
+          this.searchLN(instance, searchTerm) ||
+          searchLDevice(instance, searchTerm)
+        );
+    }
   }
 
   resetSearch() {
@@ -294,6 +338,39 @@ export class IedEditor extends LitElement {
           </md-icon-button>
         </div>
 
+        <div class="search-settings">
+          <p>Search By:</p>
+          <form
+            id="search-mode"
+            slot="content"
+            method="dialog"
+            @change=${this.handleRadioChange}
+          >
+            <md-radio
+              name="element"
+              value="0"
+              aria-label="All"
+              touch-target="wrapper"
+              checked
+            ></md-radio>
+            <label aria-hidden="true">All</label>
+            <md-radio
+              name="element"
+              value="1"
+              aria-label="LDevice"
+              touch-target="wrapper"
+            ></md-radio>
+            <label aria-hidden="true">LDevice</label>
+            <md-radio
+              name="element"
+              value="2"
+              aria-label="LN"
+              touch-target="wrapper"
+            ></md-radio>
+            <label aria-hidden="true">LN</label>
+          </form>
+        </div>
+
         ${Array.from(
           this.ied.querySelectorAll(':scope > AccessPoint > Server'),
         ).map(
@@ -303,7 +380,7 @@ export class IedEditor extends LitElement {
                 ${server.parentElement.getAttribute('name')} Server
               </summary>
               ${Array.from(server.querySelectorAll(':scope > LDevice'))
-                .filter(ld => this.searchLN(ld, this.searchTerm))
+                .filter(ld => this.searchElt(ld, this.searchTerm))
                 .map(
                   ld => html`
                     <details open>
@@ -314,7 +391,7 @@ export class IedEditor extends LitElement {
                       ${Array.from(
                         ld.querySelectorAll(':scope > LN0, :scope > LN'),
                       )
-                        .filter(ln => this.searchLN(ln, this.searchTerm))
+                        .filter(ln => this.searchElt(ln, this.searchTerm))
                         .map(
                           ln => html`
                             <details class="odd">
@@ -406,6 +483,28 @@ export class IedEditor extends LitElement {
 
     .search-container md-icon-button {
       margin-left: 8px;
+    }
+
+    .search-settings {
+      display: flex;
+      align-items: center;
+    }
+
+    .search-settings p {
+      font-family: var(--oscd-theme-text-font);
+      font-weight: bold;
+    }
+
+    #search-mode {
+      display: flex;
+      align-self: center;
+      align-items: center;
+      margin-bottom: auto;
+    }
+
+    label {
+      font-family: var(--oscd-theme-text-font);
+      color: var(--oscd-base01);
     }
 
     details {
