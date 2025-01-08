@@ -322,53 +322,58 @@ export class IedEditor extends LitElement {
         </md-filled-text-field>
 
         <div class="search-container">
-          <md-filled-text-field
-            class="search-input"
-            label="Search"
-            @input=${e => {
-              this.searchTerm = e.target.value;
-            }}
-          >
-          </md-filled-text-field>
-          <md-icon-button
-            title="Clear search"
-            @click=${() => this.resetSearch()}
-          >
-            <md-icon>clear</md-icon>
-          </md-icon-button>
-        </div>
+          <div class="search-field">
+            <md-filled-text-field
+              class="search-input"
+              label="Search"
+              @input=${e => {
+                this.searchTerm = e.target.value;
+              }}
+            >
+              <md-icon slot="leading-icon">search</md-icon>
+              <md-icon-button
+                aria-label="Clear search"
+                slot="trailing-icon"
+                title="Clear search"
+                @click=${() => this.resetSearch()}
+              >
+                <md-icon>clear</md-icon>
+              </md-icon-button>
+            </md-filled-text-field>
+          </div>
 
-        <div class="search-settings">
-          <p>Search By:</p>
-          <form
-            id="search-mode"
-            slot="content"
-            method="dialog"
-            @change=${this.handleRadioChange}
-          >
-            <md-radio
-              name="element"
-              value="0"
-              aria-label="All"
-              touch-target="wrapper"
-              checked
-            ></md-radio>
-            <label aria-hidden="true">All</label>
-            <md-radio
-              name="element"
-              value="1"
-              aria-label="LDevice"
-              touch-target="wrapper"
-            ></md-radio>
-            <label aria-hidden="true">LDevice</label>
-            <md-radio
-              name="element"
-              value="2"
-              aria-label="LN"
-              touch-target="wrapper"
-            ></md-radio>
-            <label aria-hidden="true">LN</label>
-          </form>
+          <div class="search-settings">
+            <p>Display:</p>
+            <form
+              id="search-mode"
+              slot="content"
+              method="dialog"
+              @change=${this.handleRadioChange}
+            >
+              <md-radio
+                name="element"
+                value="0"
+                aria-label="All"
+                touch-target="wrapper"
+                checked
+              ></md-radio>
+              <label aria-hidden="true">All</label>
+              <md-radio
+                name="element"
+                value="1"
+                aria-label="LDevice"
+                touch-target="wrapper"
+              ></md-radio>
+              <label aria-hidden="true">LDevice</label>
+              <md-radio
+                name="element"
+                value="2"
+                aria-label="LN"
+                touch-target="wrapper"
+              ></md-radio>
+              <label aria-hidden="true">LN</label>
+            </form>
+          </div>
         </div>
 
         ${Array.from(
@@ -473,16 +478,12 @@ export class IedEditor extends LitElement {
     }
 
     md-filled-text-field {
-      width: max-content;
+      width: 300px;
     }
 
-    .search-container {
+    .search-field {
       display: flex;
       align-items: center;
-    }
-
-    .search-container md-icon-button {
-      margin-left: 8px;
     }
 
     .search-settings {
@@ -560,6 +561,7 @@ export class IedEditor extends LitElement {
       vertical-align: sub;
     }
 
+    .search-field md-icon-button,
     details.odd > * > md-icon-button,
     details.odd > * > * > md-icon-button {
       --md-icon-button-hover-state-layer-color: var(--oscd-base2);
