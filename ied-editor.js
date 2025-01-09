@@ -109,6 +109,7 @@ export class IedEditor extends LitElement {
     doc: {},
     ied: {},
     editCount: { type: Number },
+    iedName: { type: String },
     searchTerm: { type: String },
     searchMode: { type: Number },
   };
@@ -301,24 +302,45 @@ export class IedEditor extends LitElement {
     this.requestUpdate();
   }
 
+  enterIEDName() {
+    if (this.iedName !== '') {
+      this.dispatchEvent(
+        new CustomEvent('oscd-edit', {
+          composed: true,
+          bubbles: true,
+          detail: updateIED({
+            element: this.ied,
+            attributes: { name: this.iedName },
+          }),
+        }),
+      );
+    }
+  }
+
   render() {
     return html`
       <main>
         <md-filled-text-field
+          class="ied-name"
           label="IED Name"
           value="${this.ied?.getAttribute('name')}"
-          @change=${e =>
-            this.dispatchEvent(
-              new CustomEvent('oscd-edit', {
-                composed: true,
-                bubbles: true,
-                detail: updateIED({
-                  element: this.ied,
-                  attributes: { name: e.target.value },
-                }),
-              }),
-            )}
+          @change=${e => {
+            this.iedName = e.target.value;
+          }}
+          @keydown=${e => {
+            if (e.key === 'Enter') {
+              this.enterIEDName();
+            }
+          }}
         >
+          <md-icon-button
+            aria-label="Save"
+            slot="trailing-icon"
+            title="Save IED Name"
+            @click=${() => this.enterIEDName()}
+          >
+            <md-icon>save</md-icon>
+          </md-icon-button>
         </md-filled-text-field>
 
         <div class="search-container">
@@ -561,6 +583,7 @@ export class IedEditor extends LitElement {
       vertical-align: sub;
     }
 
+    .ied-name md-icon-button,
     .search-field md-icon-button,
     details.odd > * > md-icon-button,
     details.odd > * > * > md-icon-button {
